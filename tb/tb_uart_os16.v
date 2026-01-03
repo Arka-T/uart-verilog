@@ -1,0 +1,109 @@
+`timescale 1ns/1ps
+
+module tb_uart_os16;
+
+    reg clk = 0;
+    reg rst = 1;
+
+    reg start = 0;
+    reg [7:0] data_in = 8'h00;
+
+    wire baud_tick;
+    wire os_tick;
+
+    wire tx_line;
+    wire busy;
+    wire done;
+
+    wire [7:0] rx_data;
+    wire rx_valid;
+    wire framing_error;
+
+    // 50 MHz clock
+    always #10 clk = ~clk;
+
+    // TX baud tick (1 per bit)
+    baud_gen #(
+        .CLK_HZ(50_000_000),
+        .BAUD(115200)
+    ) u_baud_tx (
+        .clk(clk),
+        .rst(rst),
+        .enable(1'b1),
+        .baud_tick(baud_tick)
+    );
+
+    // RX oversample tick (16 per bit)
+    baud_gen #(
+        .CLK_HZ(50_000_000),
+        .BAUD(115200*16)
+    ) u_baud_rx (
+        .clk(clk),
+        .rst(rst),
+        .enable(1'b1),
+        .baud_tick(os_tick)
+    );
+
+    uart_tx u_tx (
+        .clk(clk),
+        .rst(rst),
+        .baud_tick(baud_tick),
+        .start(start),
+        .data_in(data_in),
+        .tx_line(tx_line),
+        .busy(busy),
+        .done(done)
+    );
+
+    uart_rx_os16 u_rx_os16 (
+        .clk(clk),
+        .rst(rst),
+        .os_tick(os_tick),
+        .rx_line(tx_line),
+        .data_out(rx_data),
+        .valid(rx_valid),
+        .framing_error(framing_error)
+    );
+
+    task send_byte(input [7:0] b);
+    begin
+        wait(!busy);
+        @(posedge clk);
+        data_in <= b;
+        start   <= 1'b1;
+        @(posedge clk);
+        start   <= 1'b0;
+    end
+    endtask
+
+    task expect_byte(input [7:0] b);
+    begin
+        wait(rx_valid);
+        if (framing_error) begin
+            $display("FAIL: framing error");
+            $fatal;
+        end
+
+        if (rx_data !== b) begin
+            $display("FAIL: expected %h, got %h", b, rx_data);
+            $fatal;
+        end else begin
+            $display("PASS (OS16): received %h", rx_data);
+        end
+    end
+    endtask
+
+    initial begin
+        #200;
+        rst = 0;
+
+        #200;
+        send_byte(8'hB3);
+        expect_byte(8'hB3);
+
+        #2000;
+        $display("DONE");
+        $finish;
+    end
+
+endmodule
