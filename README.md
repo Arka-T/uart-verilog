@@ -1,17 +1,33 @@
-# UART TX/RX (Verilog) — Loopback Simulation
+# UART TX/RX (Verilog) – Loopback Simulation
 
-This repo contains a simple UART transmitter and receiver implemented in Verilog, verified in Vivado simulation using a loopback test (TX output connected to RX input).
+This repository contains a UART transmitter and receiver implementations written in Verilog,
+verified in Vivado behavioral simulation using a loopback test
+(TX output connected to RX input).
 
 ## Files
-- `uart_tx.v` — UART transmitter (start bit, 8 data bits LSB-first, stop bit)
-- `uart_rx.v` — UART receiver (detect start, sample bits, validate stop, pulse valid)
-- `baud_gen.v` — Baud tick generator (1 tick per bit time)
-- `tb_uart.v` — Testbench: sends a byte and checks RX output
+
+- `uart_tx.v` – UART transmitter  
+  (1 start bit, 8 data bits LSB-first, 1 stop bit)
+
+- `uart_rx_simple.v` – Simple UART receiver  
+  (detect start bit, sample bits on baud tick, validate stop bit, pulse valid)
+
+- `uart_rx_os16.v` – Oversampled UART receiver (16×)  
+  (mid-bit sampling for improved noise and clock mismatch tolerance)
+
+- `baud_gen.v` – Baud / oversample tick generator
+
+- `tb_uart_simple.v` – Testbench for simple UART RX
+
+- `tb_uart_os16.v` – Testbench for oversampled UART RX
 
 ## Frame Format
+
 - 1 start bit (0)
 - 8 data bits (LSB first)
 - 1 stop bit (1)
 
 ## Demo
-Testbench transmits `0xB3` and expects the receiver to output `0xB3` with a `rx_valid` pulse.
+
+Testbenches transmit byte `0xB3` and expect the receiver to output `0xB3`
+with a `valid` pulse.
