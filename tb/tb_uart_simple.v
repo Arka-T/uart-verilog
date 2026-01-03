@@ -45,7 +45,7 @@ module tb_uart;
     );
 
     // LOOPBACK: RX reads the same wire TX drives
-    uart_rx u_rx (
+    uart_rx_simple u_rx (
         .clk(clk),
         .rst(rst),
         .baud_tick(baud_tick),
