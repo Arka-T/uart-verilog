@@ -1,6 +1,6 @@
 `timescale 1ns/1ps
 
-module uart_rx #(
+module uart_rx_simple #(
     parameter integer DATA_BITS = 8
 )(
     input  wire                 clk,
